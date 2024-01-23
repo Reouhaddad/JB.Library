@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Login</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        body {
+            padding-top: 56px;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        #login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body class="container">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <a class="navbar-brand" href="index-home.html">
+            <img src="images/favicon.ico" width="50" height="50" class="d-inline-block align-top" alt="Favicon">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="search.html">Search</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="login.html">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="register.html">Register</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <button class="btn btn-outline-danger" onclick="logout()">Log Out</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <!-- Login Form -->
+    <div class="container" id="login-form">
+        <h2 class="text-center">Login</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" onclick="login()">Login</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script>
+        const MY_SERVER = "http://127.0.0.1:5000";
+
+        function showErrorToast(message) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "center",
+                backgroundColor: "#ff4d4d",
+                stopOnFocus: true,
+            }).showToast();
+        }
+
+        function showSuccessToast(message) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "center",
+                backgroundColor: "#4CAF50",
+                stopOnFocus: true,
+            }).showToast();
+        }
+
+        function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // Make an HTTP request to your login endpoint
+        axios.post(`${MY_SERVER}/login`, {
+            username: username,
+            password: password
+        })
+        .then(response => {
+            const { access_token, role } = response.data;
+            localStorage.setItem('access_token', access_token);
+            localStorage.setItem('role', role);
+            showSuccessToast("Login successful");
+
+            // Redirection en fonction du rôle
+            if (role === 'user') {
+                window.location.href = "index-user.html"; // Redirection pour les utilisateurs
+            } else if (role === 'manager') {
+                window.location.href = "index-manager.html"; // Redirection pour les managers
+            } else {
+                showErrorToast("Role not recognized");
+            }
+        })
+        .catch(error => {
+            showErrorToast("Invalid credentials");
+        });
+    }
+</script>
+    </script>
+
+</body>
+
+</html>

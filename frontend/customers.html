@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Customers</title>
+    <!-- Include Bootstrap CSS and other libraries -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+
+<body class="container mt-5" style="padding-top: 56px;">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <a class="navbar-brand" href="index-manager.html">
+            <img src="images/favicon.ico" width="50" height="50" class="d-inline-block align-top" alt="Favicon">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="customers.html">Customers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="books.html">Books</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="loans.html">Loans</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="search-manager.html">Search</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <button class="btn btn-outline-danger" onclick="logout()">Log Out</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <h1>Welcome to Library Management System - Customers</h1>
+
+    <!-- Add Customer Form -->
+    <h2>Add Customer</h2>
+    <div class="mb-3">
+        <label for="user" class="form-label">User</label>
+        <select class="form-control" id="user" required></select>
+    </div>
+    <div class="mb-3">
+        <label for="customer_name" class="form-label">Name</label>
+        <input type="text" class="form-control" id="customer_name" required>
+    </div>
+    <div class="mb-3">
+        <label for="city" class="form-label">City</label>
+        <input type="text" class="form-control" id="city" required>
+    </div>
+    <div class="mb-3">
+        <label for="age" class="form-label">Age</label>
+        <input type="text" class="form-control" id="age" required>
+    </div>
+    <button class="btn btn-primary" onclick="new_customer()">Add Customer</button>
+
+
+    <!-- Show Customers -->
+    <h2>Customers List</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Customer ID</th>
+                <th scope="col">User</th>
+                <th scope="col">Name</th>
+                <th scope="col">City</th>
+                <th scope="col">Age</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="customersList"></tbody>
+    </table>
+
+
+    <script>
+        const MY_SERVER = "http://127.0.0.1:5000";
+
+
+        async function logout() {
+      // Prevent default form submission
+      event.preventDefault();
+
+      try {
+         // Make an HTTP request for logout
+         const response = await axios.post(`${MY_SERVER}/logout`);
+         
+         // If successful, redirect to the home page
+         window.location.href = "index-home.html";
+      } catch (error) {
+         console.error("Error during logout", error);
+      }
+   }
+        function showToast(message, type) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "center",
+                backgroundColor: type === 'success' ? '#28a745' : '#dc3545'
+            }).showToast();
+        }
+
+        function showSuccessToast(message) {
+            showToast(message, 'success');
+        }
+
+        function showErrorToast(message) {
+            showToast(message, 'error');
+        }
+
+        const new_customer = async () => {
+    const userId = document.getElementById('user').value;
+    const customerName = document.getElementById('customer_name').value;
+    const customerCity = document.getElementById('city').value;
+    const customerAge = document.getElementById('age').value;
+
+    if (!customerName || !customerCity || !customerAge) {
+        showErrorToast("Veuillez remplir tous les champs");
+        return;
+    }
+
+    try {
+        const res = await axios.post(`${MY_SERVER}/new_customer`, {
+            user: userId,
+            customer_name: customerName,
+            city: customerCity,
+            age: customerAge
+        });
+
+        console.log(res.data);
+        if (res.data && res.data.message && res.data.message.includes("Customer added successfully")) {
+            showSuccessToast(`Customer added successfully. User: ${res.data.username}`);
+            get_customers();
+        } else {
+            showErrorToast("Erreur lors de l'ajout du client. Réponse inattendue du serveur.");
+        }
+    } catch (error) {
+        console.error(error);
+        if (error.response && error.response.data && error.response.data.message) {
+            showErrorToast(`Erreur du serveur : ${error.response.data.message}`);
+        } else {
+            showErrorToast("Erreur lors de la communication avec le serveur.");
+        }
+    }
+}
+
+
+        const get_customers = async () => {
+            // Fetch users
+            const usersResponse = await axios.get(`${MY_SERVER}/get_users`);
+            const users = usersResponse.data.users;
+
+            // Fetch customers
+            const customersResponse = await axios.get(`${MY_SERVER}/get_customers`);
+            const customersList = document.getElementById('customersList');
+            customersList.innerHTML = "";
+
+            // Populate user dropdown
+            const userDropdown = document.getElementById('user');
+            userDropdown.innerHTML = "";
+            users.forEach(user => {
+                const option = document.createElement("option");
+                option.value = user.user_id;
+                option.text = user.username;
+                userDropdown.add(option);
+            });
+
+            // Populate customers table
+            customersResponse.data.customers.forEach(customer => {
+                // const user = users.find(user => user.user_id === customer.user); // Ajout de cette ligne
+                customersList.innerHTML += `
+        <tr>
+            <td>${customer.customer_id}</td>
+            <td>${customer.username}</td>
+            <td>${customer.customer_name}</td>
+            <td>${customer.city}</td>
+            <td>${customer.age}</td>
+            <td>
+                <button class="btn btn-danger" onclick="delete_customer(${customer.customer_id})">Delete</button>
+            </td>
+        </tr>`;
+            });
+            addColorToButtons();
+        }
+
+        const delete_customer = async (customerId) => {
+            try {
+                const res = await axios.delete(`${MY_SERVER}/delete_customer/${customerId}`);
+                console.log(res.data);
+                showSuccessToast("Customer deleted successfully");
+                get_customers();
+            } catch (error) {
+                console.error(error);
+                showErrorToast("Error deleting customer");
+            }
+        }
+
+
+        function addColorToButtons() {
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.classList.add('btn-sm', 'm-1', 'btn-primary');
+            });
+        }
+
+        async function getUsers() {
+            try {
+                const response = await axios.get(`${MY_SERVER}/get_users`);
+                return response.data.users;
+            } catch (error) {
+                console.error('Erreur lors de la récupération des utilisateurs :', error);
+                return [];
+            }
+        }
+
+        // Call get_customers on page load
+
+        get_customers();
+    </script>
+
+
+</body>
+
+</html>

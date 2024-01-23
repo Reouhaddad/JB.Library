@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Loans</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+
+<body class="container mt-5" style="padding-top: 56px;">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <a class="navbar-brand" href="index-manager.html">
+            <img src="images/favicon.ico" width="50" height="50" class="d-inline-block align-top" alt="Favicon">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="customers.html">Customers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="books.html">Books</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="loans.html">Loans</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="search-manager.html">Search</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <button class="btn btn-outline-danger" onclick="logout()">Log Out</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <h1>Welcome to Library Management System - Loans</h1>
+
+    <div class="mt-4">
+        <!-- Add Loan Form -->
+        <h2>Add Loan</h2>
+        <div class="mb-3">
+            <label for="customer" class="form-label">Customer ID</label>
+            <input type="text" class="form-control" id="customer" required>
+        </div>
+        <div class="mb-3">
+            <label for="book" class="form-label">Book ID</label>
+            <input type="text" class="form-control" id="book" required>
+        </div>
+        <div class="mb-3">
+            <label for="loandate" class="form-label">Loan Date</label>
+            <input type="date" class="form-control" id="loandate" required>
+        </div>
+        <button class="btn btn-primary" onclick="new_loans()">Add Loan</button>
+        <!-- Show Loans -->
+        <h2>Loans List</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Loan ID</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Book</th>
+                    <th scope="col">Loan Date</th>
+                    <th scope="col">Return Date</th>
+                    <th scope="col">Returned</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="loansList"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const MY_SERVER = "http://127.0.0.1:5000";
+
+        async function logout() {
+      // Prevent default form submission
+      event.preventDefault();
+
+      try {
+         // Make an HTTP request for logout
+         const response = await axios.post(`${MY_SERVER}/logout`);
+         
+         // If successful, redirect to the home page
+         window.location.href = "index-home.html";
+      } catch (error) {
+         console.error("Error during logout", error);
+      }
+   }
+        // Récupération de l'ID du livre depuis l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookId = urlParams.get('bookId');
+
+        // Utilisation de l'ID du livre comme nécessaire dans la page loans.html
+        console.log('Book ID:', bookId);
+
+        // Configuration automatique de l'ID du livre dans le champ de saisie "Book ID"
+        document.getElementById('book').value = bookId;
+
+
+        function formatDate(dateString) {
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('fr-FR', options);
+        }
+
+        function showToast(message, type) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                close: true,
+                gravity: "top", // Position de la notification (top, bottom, left, right)
+                position: "center", // Positionnement horizontal (left, center, right)
+                backgroundColor: type === 'success' ? '#28a745' : '#dc3545' // Couleur de fond en fonction du type (success, error)
+            }).showToast();
+        }
+
+        function showSuccessToast(message) {
+            showToast(message, 'success');
+        }
+
+        function showErrorToast(message) {
+            showToast(message, 'error');
+        }
+
+        const new_loans = async () => {
+            const customerValue = document.getElementById('customer').value;
+            const bookValue = document.getElementById('book').value;
+            const loandateValue = document.getElementById('loandate').value;
+
+            if (!customerValue || !bookValue || !loandateValue) {
+                showErrorToast("Please fill in all fields");
+                return;
+            }
+
+            try {
+                console.log("Data sent:", { customer: customerValue, book: bookValue, loandate: loandateValue });
+                const res = await axios.post(`${MY_SERVER}/new_loans`, { customer: customerValue, book: bookValue, loandate: loandateValue });
+                console.log(res.data);
+                showSuccessToast("Loan added successfully");
+                get_loans();
+            } catch (error) {
+                console.error("Error:", error);
+                showErrorToast(`Error adding loan: ${error.message}`);
+            }
+        }
+
+
+
+        const get_loans = async () => {
+            const res = await axios.get(`${MY_SERVER}/get_loans`);
+            const loansList = document.getElementById('loansList');
+            loansList.innerHTML = "";  // Clear existing content
+
+            res.data.loans.forEach(loan => {
+                const currentDate = new Date();
+                const returnDate = new Date(loan.returndate);
+                let status;  // Utilisez status au lieu de isLate
+
+                if (loan.returned === "Not returned" && returnDate < currentDate) {
+                    status = "Late";
+                } else if (loan.returned === "Not returned") {
+                    status = "On time";
+                } else {
+                    status = "Returned";
+                }
+
+                loansList.innerHTML += `
+            <tr>
+                <td>${loan.loans_id}</td>
+                <td>${loan.customer}</td>
+                <td>${loan.book}</td>
+                <td>${formatDate(loan.loandate)}</td>
+                <td>${formatDate(loan.returndate)}</td>
+                <td>${loan.returned}</td>
+                <td style="color: ${status === 'Late' ? 'red' : (status === 'On time' ? 'green' : 'yellow')}">${status}</td>
+                <td>
+                    <button class="btn btn-danger" onclick="delete_loan(${loan.loans_id})">Delete</button>
+                    <button class="btn btn-success" onclick="toggleReturnedStatus(${loan.loans_id}, '${loan.returned}')">
+                        Returned / not returned 
+                    </button>
+                </td>
+            </tr>`;
+            });
+
+            addColorToButtons();
+        }
+
+
+
+
+        const delete_loan = async (loanId) => {
+            try {
+                const res = await axios.delete(`${MY_SERVER}/delete_loan/${loanId}`);
+                console.log(res.data);
+                showSuccessToast("Loan deleted successfully");
+                get_loans();
+            } catch (error) {
+                console.error(error);
+                showErrorToast("Error deleting loan");
+            }
+        }
+
+        const toggleReturnedStatus = async (loanId, currentStatus) => {
+            try {
+                const newStatus = currentStatus === 'Returned' ? 'Not Returned' : 'Returned';
+                const res = await axios.put(`${MY_SERVER}/toggle_returned_status/${loanId}`, { returned: newStatus });
+                console.log(res.data);
+                showSuccessToast("Return status updated successfully");
+                get_loans();  // Actualisez la liste des emprunts après la modification
+            } catch (error) {
+                console.error(error);
+                showErrorToast("Error updating return status");
+            }
+        }
+
+
+        function resetFields() {
+            document.getElementsByClassName('form-control').forEach(input => {
+                input.value = "";
+            });
+        }
+
+        function addColorToButtons() {
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.classList.add('btn-sm', 'm-1', 'btn-primary');
+            });
+        }
+
+        get_loans();
+    </script>
+
+</body>
+
+</html>

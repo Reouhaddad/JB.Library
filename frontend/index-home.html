@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+            /* Utilisez overflow-y pour autoriser le défilement vertical uniquement */
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+        }
+
+        .welcome-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="container mt-5" style="padding-top: 56px;">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <a class="navbar-brand" href="index-home.html">
+            <img src="images/favicon.ico" width="50" height="50" class="d-inline-block align-top" alt="Favicon">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="search.html">Search</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="login.html">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="register.html">Register</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <div class="container">
+        <img src="images/library.jpg" alt="Library Image" style="width: 100%; height: 500px">
+        <div class="welcome-text">
+            Welcome to My Library Management System
+        </div>
+    </div>
+
+    <div class="mt-4">
+
+        <!-- Show Books -->
+        <h2>Books List</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Book ID</th>
+                    <th scope="col">Book Name</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Year</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Image</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="booksList"></tbody>
+        </table>
+
+
+        <script>
+            const MY_SERVER = "http://127.0.0.1:5000";
+
+
+            function showErrorToast(message) {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: "#ff4d4d",
+                    stopOnFocus: true,
+                }).showToast();
+            }
+
+            function showSuccessToast(message) {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: "#4CAF50",
+                    stopOnFocus: true,
+                }).showToast();
+            }
+
+            const get_books = async () => {
+                try {
+                    const res = await axios.get(`${MY_SERVER}/get_books`);
+                    console.log(res.data.books);
+                    const booksList = document.getElementById('booksList');
+                    booksList.innerHTML = "";  // Clear existing content
+                    res.data.books.forEach(book => {
+                        booksList.innerHTML += `
+            <tr>
+                <td>${book.book_id}</td>
+                <td>${book.book_name}</td>
+                <td>${book.author}</td>
+                <td>${book.year}</td>
+                <td>${book.type}</td>
+                <td><img src="${MY_SERVER}/uploads/${book.image_filename}" alt="Book Image" style="max-width: 70px;"></td>
+                <td>
+                    <button class="btn btn-primary" onclick="create_loan(${book.book_id})">Create Loan</button>
+                </td>
+            </tr>`;
+                    });
+                    addColorToButtons(); // Ajouter des couleurs aux boutons après la mise à jour du contenu
+                } catch (error) {
+                    console.error(error);
+                    showErrorToast("Error fetching books");
+                }
+            }
+
+
+
+
+            const create_loan = async (bookId) => {
+                try {
+                    // Redirection vers la page de création de prêts avec l'ID du livre en paramètre
+                    window.location.href = `loans.html?bookId=${bookId}`;
+                } catch (error) {
+                    console.error(error);
+                    showErrorToast("Error creating loan");
+                }
+            }
+
+            function addColorToButtons() {
+                document.querySelectorAll('.btn').forEach(btn => {
+                    btn.classList.add('btn-sm', 'm-1', 'btn-primary');
+                });
+            }
+
+            // Call get_books on page load
+            get_books();
+        </script>
+
+</body>
+
+</html>

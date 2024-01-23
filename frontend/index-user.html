@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+            /* Utilisez overflow-y pour autoriser le défilement vertical uniquement */
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+        }
+
+        .welcome-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="container mt-5" style="padding-top: 56px;">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <a class="navbar-brand" href="index-user.html">
+            <img src="images/favicon.ico" width="50" height="50" class="d-inline-block align-top" alt="Favicon">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="search-user.html">Search</a>
+                </li>
+
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <button class="btn btn-outline-danger" onclick="logout()">Log Out</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <div class="container">
+        <img src="images/library.jpg" alt="Library Image" style="width: 100%; height: 500px">
+        <div class="welcome-text">
+            Welcome to My Library Management System
+        </div>
+    </div>
+
+
+    <div class="mt-4">
+
+        <!-- Show Books -->
+        <h2>Books List</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Book ID</th>
+                    <th scope="col">Book Name</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Year</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Image</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="booksList"></tbody>
+        </table>
+
+        <h2>Loans List</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Loan ID</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Book</th>
+                    <th scope="col">Loan Date</th>
+                    <th scope="col">Return Date</th>
+                    <th scope="col">Returned</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+            <tbody id="loansList"></tbody>
+        </table>
+
+        <script>
+            const MY_SERVER = "http://127.0.0.1:5000";
+
+
+            async function logout() {
+                // Prevent default form submission
+                event.preventDefault();
+
+                try {
+                    // Make an HTTP request for logout
+                    const response = await axios.post(`${MY_SERVER}/logout`);
+
+                    // If successful, redirect to the home page
+                    window.location.href = "index-home.html";
+                } catch (error) {
+                    console.error("Error during logout", error);
+                }
+            }
+
+
+            function formatDate(dateString) {
+                const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+                return new Date(dateString).toLocaleDateString('fr-FR', options);
+            }
+            function showErrorToast(message) {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: "#ff4d4d",
+                    stopOnFocus: true,
+                }).showToast();
+            }
+
+            function showSuccessToast(message) {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: "#4CAF50",
+                    stopOnFocus: true,
+                }).showToast();
+            }
+
+
+            const get_books = async () => {
+                try {
+                    const res = await axios.get(`${MY_SERVER}/get_books`);
+                    console.log(res.data.books);
+                    const booksList = document.getElementById('booksList');
+                    booksList.innerHTML = "";  // Clear existing content
+                    res.data.books.forEach(book => {
+                        booksList.innerHTML += `
+            <tr>
+                <td>${book.book_id}</td>
+                <td>${book.book_name}</td>
+                <td>${book.author}</td>
+                <td>${book.year}</td>
+                <td>${book.type}</td>
+                <td><img src="${MY_SERVER}/uploads/${book.image_filename}" alt="Book Image" style="max-width: 70px;"></td>
+            </tr>`;
+                    });
+                } catch (error) {
+                    console.error(error);
+                    showErrorToast("Error fetching books");
+                }
+            }
+
+            const get_loans = async () => {
+                try {
+                    const res = await axios.get(`${MY_SERVER}/get_loans`);
+                    console.log(res.data.loans);
+                    await getUserLoans();
+                    const loansList = document.getElementById('loansList');
+                    loansList.innerHTML = "";  // Clear existing content
+                    res.data.loans.forEach(loan => {
+                        loansList.innerHTML += `
+        <tr>
+            <td>${loan.loans_id}</td>
+            <td>${loan.customer}</td>
+            <td>${loan.book}</td>
+            <td>${loan.loandate}</td>
+            <td>${loan.returndate}</td>
+            <td>${loan.returned}</td>
+            <td><span style="color: ${loan.color};">${loan.status}</span></td>
+        </tr>`;
+                    });
+                } catch (error) {
+                    console.error(error);
+                    showErrorToast("Error fetching loans");
+                }
+            }
+
+            const getUserLoans = async () => {
+                try {
+                    // Assurez-vous d'ajouter les informations d'authentification (token) à la requête
+                    const token = localStorage.getItem('access_token');
+                    const response = await axios.get(`${MY_SERVER}/get_user_loans`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+
+                    console.log(response.data.loans);
+
+                    const loansList = document.getElementById('loansList');
+                    loansList.innerHTML = "";  // Clear existing content
+                    response.data.loans.forEach(loan => {
+                        loansList.innerHTML += `
+                <tr>
+                    <td>${loan.loans_id}</td>
+                    <td>${loan.book}</td>
+                    <td>${loan.loandate}</td>
+                    <td>${loan.returndate}</td>
+                    <td>${loan.returned}</td>
+                    <td><span style="color: ${loan.color};">${loan.status}</span></td>
+                </tr>`;
+                    });
+                } catch (error) {
+                    console.error(error);
+                    showErrorToast("Error fetching user loans");
+                }
+            };
+
+            // Call get_books on page load
+
+            get_loans();
+            get_books();
+            getUserLoans();
+        </script>
+
+</body>
+
+</html>

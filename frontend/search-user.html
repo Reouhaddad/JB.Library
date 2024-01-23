@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+</head>
+
+<body class="container mt-5" style="padding-top: 56px;">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <a class="navbar-brand" href="index-user.html">
+            <img src="images/favicon.ico" width="50" height="50" class="d-inline-block align-top" alt="Favicon">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="search.html">Search</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <button class="btn btn-outline-danger" onclick="logout()">Log Out</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+
+    <h1>Welcome to Library Management System - Search</h1>
+
+    <div class="mt-4">
+        <h2>Search</h2>
+        <div class="input-group mb-3">
+            <select class="form-control" id="search_type" name="search_type">
+                <option value="" selected disabled>Choose type of search</option>
+                <option value="book">Book</option>
+            </select>
+
+
+            <input type="text" class="form-control" id="search_term" placeholder="Enter name...">
+        </div>
+        <button class="btn btn-primary" onclick="performSearch()">Search</button>
+    </div>
+
+
+    <div class="mt-4" id="booksTableContainer" style="display: none;">
+        <h2>Books List</h2>
+        <table class="table" id="booksTable">
+            <thead>
+
+            </thead>
+            <tbody>
+                <!-- Book data will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const MY_SERVER = "http://127.0.0.1:5000";
+
+
+        async function logout() {
+      // Prevent default form submission
+      event.preventDefault();
+
+      try {
+         // Make an HTTP request for logout
+         const response = await axios.post(`${MY_SERVER}/logout`);
+         
+         // If successful, redirect to the home page
+         window.location.href = "index-home.html";
+      } catch (error) {
+         console.error("Error during logout", error);
+      }
+   }
+        function showErrorToast(message) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "center",
+                backgroundColor: "#ff4d4d",
+                stopOnFocus: true,
+            }).showToast();
+        }
+
+        function showSuccessToast(message) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "center",
+                backgroundColor: "#4CAF50",
+                stopOnFocus: true,
+            }).showToast();
+        }
+
+        function displayCustomersTable() {
+            document.getElementById('customersTableContainer').style.display = 'block';
+            document.getElementById('booksTableContainer').style.display = 'none';
+        }
+
+        function displayBooksTable() {
+            document.getElementById('customersTableContainer').style.display = 'none';
+            document.getElementById('booksTableContainer').style.display = 'block';
+        }
+
+        // Create header rows outside the performSearch function
+        const customersHeaderRow = document.getElementById('customersTable').getElementsByTagName('thead')[0].insertRow(0);
+        const booksHeaderRow = document.getElementById('booksTable').getElementsByTagName('thead')[0].insertRow(0);
+
+        async function performSearch() {
+            const searchType = document.getElementById('search_type').value;
+            const searchTerm = document.getElementById('search_term').value;
+
+            // Clear previous table data and headers
+            document.getElementById('customersTable').getElementsByTagName('tbody')[0].innerHTML = "";
+            document.getElementById('booksTable').getElementsByTagName('tbody')[0].innerHTML = "";
+            customersHeaderRow.innerHTML = ""; // Clear existing headers
+            booksHeaderRow.innerHTML = ""; // Clear existing headers
+
+            try {
+                let response;
+
+                if (searchType === 'customer') {
+                    response = await axios.get(`${MY_SERVER}/search_customers?name=${searchTerm}`);
+                    displayCustomersTable();
+                } else if (searchType === 'book') {
+                    response = await axios.get(`${MY_SERVER}/search_books?name=${searchTerm}`);
+                    displayBooksTable();
+                }
+
+                const table = document.getElementById(`${searchType}sTable`);
+                const data = response.data[`${searchType}s`];
+
+                if (data.length === 0) {
+                    showErrorToast(`No ${searchType}s found.`);
+                    return;
+                }
+
+                // Specify the order of columns based on the database order
+                const columnsOrder = searchType === 'customer'
+                    ? ['Customer_id', 'Customer_name', 'City', 'Age']
+                    : ['Book_id', 'Book_name', 'Author', 'Year', 'Type'];
+
+                // Specify the display names for the columns
+                const displayNames = searchType === 'customer'
+                    ? { 'Customer_id': 'ID', 'Customer_name': 'Name', 'City': 'City', 'Age': 'Age' }
+                    : { 'Book_id': 'ID', 'Book_name': 'Book Name', 'Author': 'Author', 'Year': 'Year', 'Type': 'Type' };
+
+                // Insert header row with the specified order and display names
+                const headerRow = searchType === 'customer' ? customersHeaderRow : booksHeaderRow;
+                columnsOrder.forEach((columnName, index) => {
+                    const headerCell = headerRow.insertCell(index);
+                    headerCell.textContent = displayNames[columnName] || columnName;
+                });
+
+                // Insert data rows
+                const tbody = table.getElementsByTagName('tbody')[0];
+                data.forEach(item => {
+                    const row = tbody.insertRow();
+                    columnsOrder.forEach((columnName, cellIndex) => {
+                        const cell = row.insertCell(cellIndex);
+                        cell.textContent = item[columnName.toLowerCase()];
+                    });
+                });
+
+
+                showSuccessToast(`${data.length} ${searchType}s found.`);
+            } catch (error) {
+                showErrorToast(`Error during search: ${error.message}`);
+            }
+        }
+
+        const get_loans = async () => {
+            const res = await axios.get(`${MY_SERVER}/get_loans`);
+            const loansList = document.getElementById('loansList');
+            loansList.innerHTML = "";  // Clear existing content
+
+            res.data.loans.forEach(loan => {
+                const currentDate = new Date();
+                const returnDate = new Date(loan.returndate);
+                let status;  // Utilisez status au lieu de isLate
+
+                if (loan.returned === "Not returned" && returnDate < currentDate) {
+                    status = "Late";
+                } else if (loan.returned === "Not returned") {
+                    status = "On time";
+                } else {
+                    status = "Returned";
+                }
+
+                loansList.innerHTML += `
+            <tr>
+                <td>${loan.loans_id}</td>
+                <td>${loan.customer}</td>
+                <td>${loan.book}</td>
+                <td>${formatDate(loan.loandate)}</td>
+                <td>${formatDate(loan.returndate)}</td>
+                <td>${loan.returned}</td>
+                <td style="color: ${status === 'Late' ? 'red' : (status === 'On time' ? 'green' : 'yellow')}">${status}</td>
+            </tr>`;
+            });
+
+            addColorToButtons();
+        }
+    </script>
+
+</body>
+
+</html>
